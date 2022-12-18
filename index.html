@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Valley Verde</title>
+        <style>
+            body {
+            font-family: sans-serif;
+            text-align: center;
+            }
+
+            h1 {
+            color: #00b8d4;
+            }
+
+            #timestamp,
+            #temperature,
+            #humidity,
+            #heater {
+            font-size: larger;
+            margin: 0.5em;
+            }
+
+            #timestamp {
+            font-size: medium;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Valley Verde</h1>
+        <div id="temperature">Temperature:</div>
+        <div id="humidity">Humidity:</div>
+        <div id="heater">Heater:</div>
+        <div id="timestamp">Last updated:</div>
+        <script src="https://www.gstatic.com/firebasejs/7.18.0/firebase-app.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/7.18.0/firebase-database.js"></script>
+        <script>
+            // Initialize Firebase
+            // TODO: Replace the following with your app's Firebase project configuration
+            const firebaseConfig = {
+            //...
+            };
+            firebase.initializeApp(firebaseConfig);
+
+            // Initialize Realtime Database
+            var db = firebase.database();
+
+            // Get data from Realtime Database
+            db.ref().on("value", function(snapshot) {
+            // Display data on the page
+            const date = new Date(snapshot.val().time*1000);
+            document.getElementById("timestamp").innerHTML = "Last updated: <br>" + date.toLocaleString();
+            document.getElementById("temperature").innerHTML = "Temperature: " + snapshot.val().temp + "°F";
+            document.getElementById("humidity").innerHTML = "Humidity: " + snapshot.val().humidity + "%";
+            document.getElementById("heater").innerHTML = "Heater: " + (snapshot.val().heater ? "On" : "Off");
+            });
+        </script>
+    </body>
+</html>
