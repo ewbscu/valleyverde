@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Valley Verde</title>
+        <style>
+            body {
+            font-family: sans-serif;
+            text-align: center;
+            }
+
+            h1 {
+            color: #00b8d4;
+            }
+
+            #timestamp,
+            #temperature,
+            #humidity,
+            #heater {
+            font-size: larger;
+            margin: 0.5em;
+            }
+
+            #timestamp {
+            font-size: medium;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Valley Verde</h1>
+        <div id="temperature">Temperature:</div>
+        <div id="humidity">Humidity:</div>
+        <div id="heater">Heater:</div>
+        <div id="timestamp">Last updated:</div>
+        <script src="https://www.gstatic.com/firebasejs/7.18.0/firebase-app.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/7.18.0/firebase-database.js"></script>
+        <script>
+            // Initialize Firebase
+            // TODO: Replace the following with your app's Firebase project configuration
+            const firebaseConfig = {
+                apiKey: "AIzaSyAk408Sg3tqOMBLJbI1ZzqbkD5xhyKI4qk",
+                authDomain: "ewb-valleyverde.firebaseapp.com",
+                databaseURL: "https://ewb-valleyverde-default-rtdb.firebaseio.com",
+                projectId: "ewb-valleyverde",
+                storageBucket: "ewb-valleyverde.appspot.com",
+                messagingSenderId: "37012547493",
+                appId: "1:37012547493:web:048570f2d63b063387aa4c",
+                measurementId: "G-YC3SQEWLG4"
+            };
+            firebase.initializeApp(firebaseConfig);
+
+            // Initialize Realtime Database
+            var db = firebase.database();
+
+            // Get data from Realtime Database
+            db.ref().on("value", function(snapshot) {
+            // Display data on the page
+            const date = new Date(snapshot.val().time*1000);
+            document.getElementById("timestamp").innerHTML = "Last updated: <br>" + date.toLocaleString();
+            document.getElementById("temperature").innerHTML = "Temperature: " + snapshot.val().temp + "&deg;F";
+            document.getElementById("humidity").innerHTML = "Humidity: " + snapshot.val().humidity + "%";
+            document.getElementById("heater").innerHTML = "Heater: " + (snapshot.val().heater ? "On" : "Off");
+            });
+        </script>
+    </body>
+</html>
