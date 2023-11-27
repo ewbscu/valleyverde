@@ -6,14 +6,14 @@
 #include "arduino_secrets.h"
 
 #define MINTEMP 70
-#define MAXTEMP 90
+#define MAXTEMP 80
 #define SECOND 1000
 #define MINUTE 60000
 
 // Pin assignments
 const int power = A3;
 const int GND = A2;
-const int relay = 3;
+const int relay = 2;
 
 // Variable for readings
 float humidity = 0;
@@ -47,15 +47,26 @@ void setup()
 
     pinMode(power, OUTPUT);
     pinMode(GND, OUTPUT);
+    pinMode(relay, OUTPUT);
 
     digitalWrite(power, HIGH);
     digitalWrite(GND, LOW);
+    //Initialize serial and wait for port to open:
+    Serial.begin(9600);
 
     //Initialize the I2C sensors and ping them
     sensor.begin();
+  // check for the WiFi module:
+  if (WiFi.status() == WL_NO_MODULE) {
+    Serial.println("Communication with WiFi module failed!");
+    // don't continue
+    while (true);
+  }
     setupWifi();
 
 }
+
+int i=0;
 
 void loop()
 {
@@ -73,13 +84,18 @@ void loop()
     }
 
     // Send info to website
-    sendData(tempf, humidity, heat);
     // *Code Here*
 
     // Delay one second while heater is on, else one minute
     if (heat) {
+      if(i%10 == 0) {
+        Serial.println("UPDATING DATA");
+        sendData(tempf, humidity, heat);
+      }
+      i++;
       delay(SECOND);
     } else {
+      sendData(tempf, humidity, heat);
       delay(MINUTE);
     }
 }
@@ -111,34 +127,37 @@ void printInfo()
 
 
 void setupWifi() {
-  //Initialize serial and wait for port to open:
-  Serial.begin(9600);
-  // check for the WiFi module:
-  if (WiFi.status() == WL_NO_MODULE) {
-    Serial.println("Communication with WiFi module failed!");
-    // don't continue
-    while (true);
-  }
   String fv = WiFi.firmwareVersion();
   if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
     Serial.println("Please upgrade the firmware");
     Serial.println(WIFI_FIRMWARE_LATEST_VERSION);
   }
+  status = 0;
+  int tries = 0;
   // attempt to connect to WiFi network:
-  while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to SSID: ");
-    Serial.println(ssid);
+  while (status != WL_CONNECTED && tries < 5) {
+//    Serial.print("Attempting to connect to SSID: ");
+//    Serial.println(ssid);
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
     status = WiFi.begin(ssid, pass);
     // wait 10 seconds for connection:
-    delay(10000);
+    delay(3000);
+    Serial.print(".");
+    tries++;
   }
+  Serial.println("");
   Serial.println("Connected to wifi");
   printWiFiStatus();
   Udp.begin(localPort);
 }
 
 void sendData(float temp, float humidity, bool heater) {
+  Serial.print("WIFI STATUS: ");
+   Serial.println(WiFi.status());
+  if(WiFi.status() != WL_CONNECTED) {
+    Serial.println("Reconnecting...");
+    setupWifi();
+  }
   sendNTPpacket(timeServer);
   delay(1000);
   if (Udp.parsePacket()) {
@@ -195,6 +214,7 @@ void sendData(float temp, float humidity, bool heater) {
 
 // send an NTP request to the time server at the given address
 unsigned long sendNTPpacket(IPAddress& address) {
+  Serial.println("Getting time");
   // set all bytes in the buffer to 0
   memset(packetBuffer, 0, NTP_PACKET_SIZE);
   // Initialize values needed to form NTP request
@@ -211,6 +231,7 @@ unsigned long sendNTPpacket(IPAddress& address) {
   // you can send a packet requesting a timestamp:
   Udp.beginPacket(address, 123); //NTP requests are to port 123
   Udp.write(packetBuffer, NTP_PACKET_SIZE);
+  Serial.println("Got Time");
   Udp.endPacket();
 }
 
@@ -228,4 +249,3 @@ void printWiFiStatus() {
   Serial.print(rssi);
   Serial.println(" dBm");
 }
-
